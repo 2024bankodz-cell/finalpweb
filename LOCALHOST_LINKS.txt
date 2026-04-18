@@ -1,0 +1,66 @@
+===============================================
+USTHB SCOLARITÉ - LOCALHOST LINKS
+===============================================
+
+MAIN APPLICATION:
+http://localhost/my_backend/
+
+LOGIN PAGE:
+http://localhost/my_backend/public/login.php
+
+PHPMYADMIN (Database Management):
+http://localhost/phpmyadmin
+Username: root
+Password: 1234
+
+===============================================
+TEST CREDENTIALS
+===============================================
+
+STUDENT ACCOUNTS:
+1. Ali Karim
+   - Email: ali.karim@usthb.dz OR Matricule: 12345
+   - Password: password123
+   - Classes & Assignments: YES
+
+2. Leila Houda
+   - Email: leila.houda@usthb.dz OR Matricule: 67899
+   - Password: password123
+   - Classes & Assignments: NO (empty)
+
+3. Omar Bouzid
+   - Email: omar.bouzid@usthb.dz OR Matricule: 34521
+   - Password: password123
+   - Classes & Assignments: NO (empty)
+
+4. Dekrah Lakehal
+   - Email: dekrah913@gmail.com OR Matricule: 242431577219
+   - Password: [check in admin panel]
+   - Classes & Assignments: NO (empty)
+
+TEACHER ACCOUNT:
+- Email: benali@usthb.dz
+- Password: password123
+
+ADMIN ACCOUNT:
+- Email: admin@usthb.dz
+- Password: password123
+
+===============================================
+AVAILABLE MODULES
+===============================================
+
+L2 INFO:
+- ARCHI2: Architecture 2
+- PWEB: Programmation Web
+- BDD: Bases de données
+- GL: Génie Logiciel
+- SYS: Systèmes d'Exploitation
+- THG: Théorie des Graphes
+
+L3 INFO:
+- PWEB: Web Programming
+- ARCHI: Architecture
+- GL: Software Engineering
+
+===============================================

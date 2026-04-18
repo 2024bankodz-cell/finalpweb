@@ -91,7 +91,7 @@ $today   = date('Y-m-d');
                 <a href="classes.php" class="nav-item">My Classes</a>
                 <a href="assignments.php" class="nav-item active">Assignments</a>
                 <a href="grades.php" class="nav-item">Grades</a>
-                <a href="logout.php" class="nav-item" style="margin-top: auto; color:#dc2626; text-decoration:none; font-weight:600; padding:12px 16px; border-radius:10px;">Logout</a>
+                <a href="../public/logout.php" class="nav-item" style="margin-top: auto; color:#dc2626; text-decoration:none; font-weight:600; padding:12px 16px; border-radius:10px;">Logout</a>
             </nav>
         </aside>
         <main>

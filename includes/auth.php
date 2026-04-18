@@ -154,16 +154,16 @@ function get_user_name(): string {
 
 function get_dashboard_url(): string {
     return match (get_role()) {
-        'etudiant'   => 'student.php',
-        'enseignant' => 'teacher.php',
-        'admin'      => 'admin.php',
-        default      => 'login.php',
+        'etudiant'   => 'student/student.php',
+        'enseignant' => 'teacher/teacher.php',
+        'admin'      => 'admin/admin.php',
+        default      => 'public/login.php',
     };
 }
 
 function require_login(string $expected_role = ''): void {
     if (!is_logged_in()) {
-        header('Location: ' . url('login.php'));
+        header('Location: ' . url('public/login.php'));
         exit;
     }
     if ($expected_role && get_role() !== $expected_role) {

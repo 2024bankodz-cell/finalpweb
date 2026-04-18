@@ -2,7 +2,7 @@
 // ============================================================
 //  register.php — Page d'inscription
 // ============================================================
-require_once 'includes/auth.php';
+require_once '../includes/auth.php';
 
 if (is_logged_in()) {
     header('Location: ' . url(get_dashboard_url()));
@@ -49,7 +49,7 @@ $post_role = $_POST['role'] ?? 'etudiant';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inscription – <?= APP_NAME ?></title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
     <style>
         .reg-extra { display: none; }
         .reg-extra.show { display: block; }
@@ -67,7 +67,7 @@ $post_role = $_POST['role'] ?? 'etudiant';
         </div>
     </div>
     <div class="nav-links">
-        <a href="index.php"    class="nav-link">Accueil</a>
+        <a href="../index.php"    class="nav-link">Accueil</a>
         <a href="login.php"    class="nav-link">Connexion</a>
         <a href="register.php" class="nav-link active">Inscription</a>
     </div>

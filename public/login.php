@@ -2,7 +2,7 @@
 // ============================================================
 //  login.php — Login page
 // ============================================================
-require_once 'includes/auth.php';
+require_once '../includes/auth.php';
 
 if (is_logged_in()) {
     header('Location: ' . url(get_dashboard_url()));
@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login – <?= APP_NAME ?></title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
 
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
     <div class="nav-links">
-        <a href="index.php" class="nav-link">Home</a>
+        <a href="../index.php" class="nav-link">Home</a>
         <a href="login.php" class="nav-link active">Login</a>
     </div>
 </nav>

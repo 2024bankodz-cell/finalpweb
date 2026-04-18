@@ -1,5 +1,5 @@
 <?php
-require_once 'includes/auth.php';
+require_once '../includes/auth.php';
 require_login('etudiant');
 $pdo = get_pdo();
 

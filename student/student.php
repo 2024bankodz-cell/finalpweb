@@ -1,7 +1,7 @@
 <?php
-require_once 'includes/auth.php';
+require_once '../includes/auth.php';
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'etudiant') { 
-    header('Location: ' . url('login.php')); 
+    header('Location: ' . url('public/login.php')); 
     exit(); 
 }
 $pdo = get_pdo();
@@ -91,13 +91,13 @@ function calculateFinal($tp, $td, $exam) {
 <body>
     <div class="layout">
         <aside class="sidebar">
-            <div class="logo"><img src="usthb.png" class="logo-img" alt="Logo"><span>USTHB</span></div>
+            <div class="logo"><img src="../usthb.png" class="logo-img" alt="Logo"><span>USTHB</span></div>
             <nav>
                 <a href="student.php" class="nav-item active">Dashboard</a>
                 <a href="classes.php" class="nav-item">My Classes</a>
                 <a href="assignments.php" class="nav-item">Assignments</a>
                 <a href="grades.php" class="nav-item">Grades</a>
-                <a href="logout.php" class="nav-logout">Logout</a>
+                <a href="../public/logout.php" class="nav-logout">Logout</a>
             </nav>
         </aside>
         <main>

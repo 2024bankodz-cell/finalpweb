@@ -9,7 +9,7 @@ $stmt = $pdo->prepare("SELECT * FROM enseignants WHERE id = ?");
 $stmt->execute([$user_id]);
 $ens = $stmt->fetch();
 
-$stmt = $pdo->prepare("SELECT * FROM modules WHERE enseignant_id = ? AND annee_univ = '2025/2026'");
+$stmt = $pdo->prepare("SELECT * FROM modules WHERE enseignant_id = ? AND annee_univ = '2025/2026' ORDER BY code ASC LIMIT 1");
 $stmt->execute([$user_id]);
 $modules = $stmt->fetchAll();
 

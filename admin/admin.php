@@ -1,5 +1,5 @@
 <?php
-require_once 'includes/auth.php';
+require_once '../includes/auth.php';
 require_login('admin');
 
 $pdo = get_pdo();
@@ -137,11 +137,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_module'])) {
         $notif = '<div style="background:#fee2e2;color:#dc2626;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;">Module code and name are required.</div>';
     } else {
         try {
+            if ($enseignant_id) {
+                $chk = $pdo->prepare("SELECT id FROM modules WHERE enseignant_id = ? AND annee_univ = '2025/2026'");
+                $chk->execute([$enseignant_id]);
+                if ($chk->fetch()) {
+                    throw new \PDOException('Teacher already assigned to a module for this year.');
+                }
+            }
             $stmt = $pdo->prepare("INSERT INTO modules (code, intitule, coefficient, niveau, enseignant_id, annee_univ) VALUES (?,?,?,?,?,?)");
             $stmt->execute([$code, $intitule, $coefficient, $niveau, $enseignant_id ?: null, '2025/2026']);
             $notif = '<div style="background:#d1fae5;color:#166534;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;">Module created successfully.</div>';
         } catch (\PDOException $e) {
-            $notif = '<div style="background:#fee2e2;color:#dc2626;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;">Module code already exists.</div>';
+            $message = strpos($e->getMessage(), 'Teacher already assigned') !== false
+                ? 'This teacher already has a module assigned for 2025/2026.'
+                : 'Module code already exists or invalid module assignment.';
+            $notif = '<div style="background:#fee2e2;color:#dc2626;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;">' . $message . '</div>';
         }
     }
 }
@@ -207,14 +217,14 @@ $modules = $pdo->query("SELECT * FROM modules WHERE annee_univ = '2025/2026' ORD
 <body>
     <div class="layout">
         <aside class="sidebar">
-            <div class="logo"><img src="usthb.png" class="logo-img" alt="Logo"><span>USTHB</span></div>
+            <div class="logo"><img src="../usthb.png" class="logo-img" alt="Logo"><span>USTHB</span></div>
             <nav>
                 <a href="?panel=dashboard" class="nav-item <?= $panel === 'dashboard' ? 'active' : '' ?>">Dashboard</a>
                 <a href="?panel=students" class="nav-item <?= $panel === 'students' ? 'active' : '' ?>">Students</a>
                 <a href="?panel=teachers" class="nav-item <?= $panel === 'teachers' ? 'active' : '' ?>">Teachers</a>
                 <a href="?panel=modules" class="nav-item <?= $panel === 'modules' ? 'active' : '' ?>">Modules</a>
                 <a href="?panel=grade-review" class="nav-item <?= $panel === 'grade-review' ? 'active' : '' ?>">Grade Review</a>
-                <a href="logout.php" class="nav-logout">Logout</a>
+                <a href="../public/logout.php" class="nav-logout">Logout</a>
             </nav>
         </aside>
 

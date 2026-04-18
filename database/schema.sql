@@ -56,7 +56,8 @@ CREATE TABLE IF NOT EXISTS modules (
     niveau          VARCHAR(30)  NOT NULL DEFAULT 'L2 ISIL',
     enseignant_id   INT,
     annee_univ      VARCHAR(10)  NOT NULL DEFAULT '2025/2026',
-    FOREIGN KEY (enseignant_id) REFERENCES enseignants(id) ON DELETE SET NULL
+    FOREIGN KEY (enseignant_id) REFERENCES enseignants(id) ON DELETE SET NULL,
+    UNIQUE KEY uq_module_enseignant_annee (enseignant_id, annee_univ)
 );
 
 -- ── Inscriptions (étudiant ↔ module) ─────────────────────

@@ -1,5 +1,5 @@
 <?php
-require_once 'includes/auth.php';
+require_once '../includes/auth.php';
 require_login('enseignant');
 
 $pdo = get_pdo();
@@ -10,7 +10,7 @@ $stmt = $pdo->prepare('SELECT * FROM enseignants WHERE id = ?');
 $stmt->execute([$user_id]);
 $ens = $stmt->fetch();
 
-$stmt = $pdo->prepare('SELECT * FROM modules WHERE enseignant_id = ? AND annee_univ = ? ORDER BY code ASC');
+$stmt = $pdo->prepare('SELECT * FROM modules WHERE enseignant_id = ? AND annee_univ = ? ORDER BY code ASC LIMIT 1');
 $stmt->execute([$user_id, '2025/2026']);
 $modules = $stmt->fetchAll();
 
@@ -183,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_to_admin'])) {
                         <p><strong>Teacher:</strong> " . $teacher_name . "</p>
                         <p><strong>Status:</strong> <span style='color: #10b981; font-weight: bold;'>Ready for Review</span></p>
                     </div>
-                    <p><a href='http://localhost/my_backend/admin.php?panel=grade-review' style='background: #3b82f6; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block;'>View Grades in Admin Panel</a></p>
+                    <p><a href='" . APP_URL . "/admin/admin.php?panel=grade-review' style='background: #3b82f6; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block;'>View Grades in Admin Panel</a></p>
                     <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;'>
                     <p style='font-size: 12px; color: #666;'>This is an automated notification from USTHB Scolarité system.</p>
                 </body>
@@ -281,13 +281,13 @@ $panel = $_GET['panel'] ?? 'grades';
 <body>
     <div class="layout">
         <aside class="sidebar">
-            <div class="logo"><img src="usthb.png" class="logo-img" alt="Logo"><span>USTHB</span></div>
+            <div class="logo"><img src="../usthb.png" class="logo-img" alt="Logo"><span>USTHB</span></div>
             <nav>
                 <a href="?panel=grades" class="nav-item <?= $panel === 'grades' ? 'active' : '' ?>">Grades</a>
                 <a href="?panel=absences" class="nav-item <?= $panel === 'absences' ? 'active' : '' ?>">Absences</a>
                 <a href="?panel=modules" class="nav-item <?= $panel === 'modules' ? 'active' : '' ?>">My Modules</a>
                 <a href="?panel=profile" class="nav-item <?= $panel === 'profile' ? 'active' : '' ?>">Profile</a>
-                <a href="logout.php" class="nav-logout">Logout</a>
+                <a href="../public/logout.php" class="nav-logout">Logout</a>
             </nav>
         </aside>
         <main>

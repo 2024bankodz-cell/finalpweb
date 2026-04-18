@@ -12,8 +12,9 @@ $stmt->execute([$user_id]);
 $u = $stmt->fetch();
 
 $days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-$days_fr = ['Sunday'=>'Dimanche','Monday'=>'Lundi','Tuesday'=>'Mardi','Wednesday'=>'Mercredi','Thursday'=>'Jeudi','Friday'=>'Vendredi','Saturday'=>'Samedi'];
-$today_fr = $days_fr[date('l')];
+$days_en = ['Sunday'=>'Dimanche','Monday'=>'Lundi','Tuesday'=>'Mardi','Wednesday'=>'Mercredi','Thursday'=>'Jeudi','Friday'=>'Vendredi','Saturday'=>'Samedi'];
+$days_fr_to_en = array_flip($days_en); // Reverse mapping
+$today_fr = $days_en[date('l')];
 
 $stmt = $pdo->prepare('
     SELECT jour, module_name, heure_debut, salle
@@ -81,7 +82,7 @@ $total_count = count($all);
             <a href="classes.php" class="nav-item active">My Classes</a>
             <a href="assignments.php" class="nav-item">Assignments</a>
             <a href="grades.php" class="nav-item">Grades</a>
-            <a href="logout.php" class="nav-item" style="color:#dc2626; margin-top: auto;">Logout</a>
+            <a href="../public/logout.php" class="nav-item" style="color:#dc2626; margin-top: auto;">Logout</a>
         </nav>
     </aside>
     <main>

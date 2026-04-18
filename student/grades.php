@@ -1,7 +1,7 @@
 <?php
-require_once 'includes/auth.php';
+require_once '../includes/auth.php';
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'etudiant') {
-    header('Location: ' . url('login.php'));
+    header('Location: ' . url('public/login.php'));
     exit();
 }
 $pdo = get_pdo();
@@ -11,15 +11,13 @@ $stmt = $pdo->prepare('SELECT * FROM etudiants WHERE id = ?');
 $stmt->execute([$user_id]);
 $u = $stmt->fetch();
 
-$stmt = $pdo->prepare('
-    SELECT m.code, m.intitule, n.note_tp, n.note_td, n.note_exam 
-    FROM inscriptions i
-    JOIN modules m ON m.id = i.module_id
-    LEFT JOIN notes n ON n.etudiant_id = i.etudiant_id AND n.module_id = i.module_id
-    WHERE i.etudiant_id = ?
+$stmt = $pdo->prepare('SELECT m.code, m.intitule, m.niveau, n.note_tp, n.note_td, n.note_exam
+    FROM modules m
+    LEFT JOIN notes n ON n.module_id = m.id AND n.etudiant_id = ? AND n.annee_univ = ?
+    WHERE m.niveau = ? AND m.annee_univ = ?
     ORDER BY m.code ASC
 ');
-$stmt->execute([$user_id]);
+$stmt->execute([$user_id, '2025/2026', $u['niveau'], '2025/2026']);
 $modules = $stmt->fetchAll();
 
 function calculateFinal($tp, $td, $exam) {
@@ -99,13 +97,13 @@ function calculateFinal($tp, $td, $exam) {
 <body>
 <div class="layout">
     <aside class="sidebar">
-        <div class="logo"><img src="usthb.png" class="logo-img" alt="Logo"><span>USTHB</span></div>
+        <div class="logo"><img src="../usthb.png" class="logo-img" alt="Logo"><span>USTHB</span></div>
         <nav>
             <a href="student.php" class="nav-item">Dashboard</a>
             <a href="classes.php" class="nav-item">My Classes</a>
             <a href="assignments.php" class="nav-item">Assignments</a>
             <a href="grades.php" class="nav-item active">Grades</a>
-            <a href="logout.php" class="nav-logout">Logout</a>
+            <a href="../public/logout.php" class="nav-logout">Logout</a>
         </nav>
     </aside>
     <main>
@@ -118,11 +116,11 @@ function calculateFinal($tp, $td, $exam) {
             <div class="module-card">
                 <div class="module-top">
                     <div><span class="module-code"><?= htmlspecialchars($m['code']) ?></span><h3 style="margin-top:8px;"><?= htmlspecialchars($m['intitule']) ?></h3></div>
-                    <div style="text-align:right;"><span class="final-score" style="color:<?= ($f !== null && $f >= 10) ? '#16a34a' : '#dc2626' ?>"><?= $f !== null ? number_format($f, 2) : 'N/A' ?></span></div>
+                    <div style="text-align:right;"><span class="final-score" style="color:<?= ($f !== null && $f >= 10) ? '#16a34a' : ($f !== null ? '#dc2626' : '#64748b') ?>"><?= $f !== null ? number_format($f, 2) : '&mdash;' ?></span></div>
                 </div>
-                <div class="comp-row"><span>TP</span><div class="comp-track"><div class="comp-fill" style="width:<?= $m['note_tp'] !== null ? (($m['note_tp']/20)*100) : 0 ?>%; background:#60a5fa;"><?= $m['note_tp'] !== null ? htmlspecialchars(number_format($m['note_tp'], 2)) : '-' ?>/20</div></div><span>20%</span></div>
-                <div class="comp-row"><span>TD</span><div class="comp-track"><div class="comp-fill" style="width:<?= $m['note_td'] !== null ? (($m['note_td']/20)*100) : 0 ?>%; background:#3b82f6;"><?= $m['note_td'] !== null ? htmlspecialchars(number_format($m['note_td'], 2)) : '-' ?>/20</div></div><span><?= ($m['note_tp'] === null) ? '40%' : '20%' ?></span></div>
-                <div class="comp-row"><span>Exam</span><div class="comp-track"><div class="comp-fill" style="width:<?= $m['note_exam'] !== null ? (($m['note_exam']/20)*100) : 0 ?>%; background:#1e4f8c;"><?= $m['note_exam'] !== null ? htmlspecialchars(number_format($m['note_exam'], 2)) : '-' ?>/20</div></div><span>60%</span></div>
+                <div class="comp-row"><span>TP</span><div class="comp-track"><div class="comp-fill" style="width:<?= $m['note_tp'] !== null ? (($m['note_tp']/20)*100) : 2 ?>%; background:<?= $m['note_tp'] !== null ? '#60a5fa' : '#cbd5e1' ?>;"><?= $m['note_tp'] !== null ? htmlspecialchars(number_format($m['note_tp'], 2)) : '&mdash;' ?>/20</div></div><span>20%</span></div>
+                <div class="comp-row"><span>TD</span><div class="comp-track"><div class="comp-fill" style="width:<?= $m['note_td'] !== null ? (($m['note_td']/20)*100) : 2 ?>%; background:<?= $m['note_td'] !== null ? '#3b82f6' : '#cbd5e1' ?>;"><?= $m['note_td'] !== null ? htmlspecialchars(number_format($m['note_td'], 2)) : '&mdash;' ?>/20</div></div><span><?= ($m['note_tp'] === null) ? '40%' : '20%' ?></span></div>
+                <div class="comp-row"><span>Exam</span><div class="comp-track"><div class="comp-fill" style="width:<?= $m['note_exam'] !== null ? (($m['note_exam']/20)*100) : 2 ?>%; background:<?= $m['note_exam'] !== null ? '#1e4f8c' : '#cbd5e1' ?>;"><?= $m['note_exam'] !== null ? htmlspecialchars(number_format($m['note_exam'], 2)) : '&mdash;' ?>/20</div></div><span>60%</span></div>
             </div>
             <?php endforeach; ?>
         </div>

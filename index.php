@@ -28,7 +28,7 @@ if (is_logged_in()) {
     </div>
     <div class="nav-links">
         <a href="index.php" class="nav-link active">Home</a>
-        <a href="login.php" class="nav-link">Login</a>
+        <a href="public/login.php" class="nav-link">Login</a>
     </div>
 </nav>
 
@@ -41,7 +41,7 @@ if (is_logged_in()) {
             Access your personal space to view your grades, manage your modules and academic records.
         </div>
         <div class="hero-btns">
-            <a href="login.php">
+            <a href="public/login.php">
                 <button class="btn-primary">Login</button>
             </a>
         </div>
@@ -89,17 +89,17 @@ if (is_logged_in()) {
 <section class="roles-section">
     <div class="section-label">Available Spaces</div>
     <div class="roles-grid">
-        <a href="login.php?role=etudiant" class="role-card">
+        <a href="public/login.php?role=etudiant" class="role-card">
             <div class="role-dot blue"></div>
             <div class="role-name">Student</div>
             <div class="role-desc">View your grades, transcripts and academic results.</div>
         </a>
-        <a href="login.php?role=enseignant" class="role-card">
+        <a href="public/login.php?role=enseignant" class="role-card">
             <div class="role-dot green"></div>
             <div class="role-name">Teacher</div>
             <div class="role-desc">Enter grades, manage your modules and track results.</div>
         </a>
-        <a href="login.php?role=admin" class="role-card">
+        <a href="public/login.php?role=admin" class="role-card">
             <div class="role-dot amber"></div>
             <div class="role-name">Administrator</div>
             <div class="role-desc">Complete management: students, teachers, modules and enrollments.</div>

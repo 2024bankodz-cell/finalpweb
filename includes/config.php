@@ -1,8 +1,21 @@
 <?php
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'usthb_scolarite');
-define('DB_USER', 'root');
-define('DB_PASS', '1234');
+// Load environment variables from .env file if it exists
+if (file_exists(__DIR__ . '/../.env')) {
+    $env_lines = file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($env_lines as $line) {
+        if (strpos($line, '=') !== false && strpos($line, '#') !== 0) {
+            list($key, $value) = explode('=', $line, 2);
+            $_ENV[trim($key)] = trim($value);
+        }
+    }
+}
+
+// Database Configuration with environment variable fallbacks
+define('DB_HOST', $_ENV['DB_HOST'] ?? $_SERVER['DB_HOST'] ?? 'localhost');
+define('DB_NAME', $_ENV['DB_NAME'] ?? $_SERVER['DB_NAME'] ?? 'usthb_scolarite');
+define('DB_USER', $_ENV['DB_USER'] ?? $_SERVER['DB_USER'] ?? 'root');
+define('DB_PASS', $_ENV['DB_PASS'] ?? $_SERVER['DB_PASS'] ?? '1234');
+define('APP_URL', $_ENV['APP_URL'] ?? $_SERVER['APP_URL'] ?? 'http://localhost/my_backend');
 
 function get_app_base_path(): string {
     static $base = null;
