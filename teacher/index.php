@@ -54,8 +54,23 @@ function seed_demo_students_for_teacher(PDO $pdo, array $modules, string $noteFi
         ['nom' => 'Nadia', 'prenom' => 'Youssef', 'email' => 'nadia.youssef@usthb.dz', 'matricule' => '22222', 'niveau' => 'L2 ISIL', 'date_naissance' => '2002-04-19'],
     ];
     $insertStudent = $pdo->prepare("INSERT IGNORE INTO etudiants (nom, prenom, email, matricule, niveau, date_naissance, mot_de_passe) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $enrollStudent = $pdo->prepare("INSERT IGNORE INTO inscriptions (etudiant_id, module_id, annee_univ) SELECT ?, id, '2025/2026' FROM modules WHERE niveau = ? AND annee_univ = '2025/2026'");
     foreach ($demoStudents as $student) {
         $insertStudent->execute([$student['nom'], $student['prenom'], $student['email'], $student['matricule'], $student['niveau'], $student['date_naissance'], $hash]);
+        $studentId = $pdo->lastInsertId();
+        if ($studentId) {
+            $enrollStudent->execute([$studentId, $student['niveau']]);
+        }
+    }
+    
+    // Bulk enroll all existing students without conflicting inscriptions
+    foreach ($modules as $mod) {
+        $stmt = $pdo->prepare("
+            INSERT IGNORE INTO inscriptions (etudiant_id, module_id, annee_univ)
+            SELECT e.id, ?, '2025/2026' FROM etudiants e
+            WHERE e.niveau = ? AND e.actif = 1
+        ");
+        $stmt->execute([$mod['id'], $mod['niveau']]);
     }
 }
 ?>
@@ -221,7 +236,7 @@ function seed_demo_students_for_teacher(PDO $pdo, array $modules, string $noteFi
         </nav>
 
         <div class="sidebar-footer">
-            <a href="../logout.php" class="sidebar-logout">
+            <a href="../public/logout.php" class="sidebar-logout">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 Logout
             </a>

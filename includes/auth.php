@@ -2,6 +2,60 @@
 require_once __DIR__ . '/config.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 
+/* ── CSRF Token Management ────────────────────────────────────── */
+function generate_csrf_token(): string {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function validate_csrf_token(string $token): bool {
+    if (empty($_SESSION['csrf_token']) || empty($token)) {
+        return false;
+    }
+    return hash_equals($_SESSION['csrf_token'], $token);
+}
+
+/* ── Improved Brute-Force Protection ──────────────────────────── */
+function check_login_attempts(string $role): bool {
+    $client_ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $attempt_key = 'login_attempts_' . $role . '_' . hash('sha256', $client_ip);
+    $lockout_key = 'login_lockout_' . $role . '_' . hash('sha256', $client_ip);
+    
+    // Check if account is locked (30 minutes lockout)
+    if (isset($_SESSION[$lockout_key]) && time() < $_SESSION[$lockout_key]) {
+        return false;
+    }
+    
+    // Clear lockout if expired
+    if (isset($_SESSION[$lockout_key]) && time() >= $_SESSION[$lockout_key]) {
+        unset($_SESSION[$lockout_key]);
+        unset($_SESSION[$attempt_key]);
+    }
+    
+    return true;
+}
+
+function record_failed_login(string $role): void {
+    $client_ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $attempt_key = 'login_attempts_' . $role . '_' . hash('sha256', $client_ip);
+    $lockout_key = 'login_lockout_' . $role . '_' . hash('sha256', $client_ip);
+    
+    $_SESSION[$attempt_key] = ($_SESSION[$attempt_key] ?? 0) + 1;
+    
+    // Lock after 5 failed attempts for 30 minutes
+    if ($_SESSION[$attempt_key] >= 5) {
+        $_SESSION[$lockout_key] = time() + 1800; // 30 minutes
+    }
+}
+
+function reset_login_attempts(string $role): void {
+    $client_ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $attempt_key = 'login_attempts_' . $role . '_' . hash('sha256', $client_ip);
+    unset($_SESSION[$attempt_key]);
+}
+
 /* ── Connexion ────────────────────────────────────────────── */
 function login(string $identifiant, string $password, string $role): array {
     $pdo = get_pdo();
@@ -11,13 +65,12 @@ function login(string $identifiant, string $password, string $role): array {
         return ['success' => false, 'message' => 'Rôle invalide.'];
     }
 
-    $table = $allowed_tables[$role];
-
-    // FIX: basic brute-force protection via session counter
-    $_SESSION['login_attempts'] = ($_SESSION['login_attempts'] ?? 0) + 1;
-    if ($_SESSION['login_attempts'] > 5) {
-        return ['success' => false, 'message' => 'Trop de tentatives. Veuillez réessayer plus tard.'];
+    // Check brute force protection
+    if (!check_login_attempts($role)) {
+        return ['success' => false, 'message' => 'Compte temporairement verrouillé. Veuillez réessayer dans 30 minutes.'];
     }
+
+    $table = $allowed_tables[$role];
 
     // Pour l'étudiant on accepte email OU matricule
     if ($role === 'etudiant') {
@@ -31,11 +84,12 @@ function login(string $identifiant, string $password, string $role): array {
     $user = $stmt->fetch();
 
     if (!$user || !password_verify($password, $user['mot_de_passe'])) {
+        record_failed_login($role);
         return ['success' => false, 'message' => 'Identifiant ou mot de passe incorrect.'];
     }
 
-    // Reset attempt counter on success
-    $_SESSION['login_attempts'] = 0;
+    // Reset attempt counter on successful login
+    reset_login_attempts($role);
 
     // Stocker dans la session
     $_SESSION['user_id']   = $user['id'];
@@ -95,6 +149,9 @@ function register(array $data): array {
                 $data['matricule'], $data['niveau'],
                 $data['date_naissance'] ?? null, $hash
             ]);
+            $student_id = $pdo->lastInsertId();
+            $stmt = $pdo->prepare("INSERT IGNORE INTO inscriptions (etudiant_id, module_id, annee_univ) SELECT ?, id, '2025/2026' FROM modules WHERE niveau = ? AND annee_univ = '2025/2026'");
+            $stmt->execute([$student_id, $data['niveau']]);
 
         } elseif ($role === 'enseignant') {
             $stmt = $pdo->prepare("SELECT id FROM enseignants WHERE email = ?");
@@ -217,4 +274,29 @@ function h(string $s): string {
 function alert(string $type, string $msg): string {
     $class = $type === 'success' ? 'alert-success' : ($type === 'error' ? 'alert-error' : 'alert-info');
     return '<div class="alert ' . $class . '">' . h($msg) . '</div>';
+}
+
+/* ── Email Header Sanitization ───────────────────────────────── */
+function is_valid_email(string $email): bool {
+    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+}
+
+function sanitize_email_header(string $email): string {
+    // Remove line breaks and other CRLF injection attempts
+    $email = str_replace(["\r", "\n", "%0d", "%0a"], '', $email);
+    return trim($email);
+}
+
+function build_safe_email_headers(string $from_email): string {
+    $from_email = sanitize_email_header($from_email);
+    if (!is_valid_email($from_email)) {
+        $from_email = 'noreply@usthb-scolarite.dz';
+    }
+    
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+    $headers .= "From: " . $from_email . "\r\n";
+    $headers .= "X-Mailer: USTHB-Scolarite\r\n";
+    
+    return $headers;
 }

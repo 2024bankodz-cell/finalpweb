@@ -14,9 +14,11 @@ $stmt = $pdo->prepare('SELECT * FROM modules WHERE enseignant_id = ? AND annee_u
 $stmt->execute([$user_id, '2025/2026']);
 $modules = $stmt->fetchAll();
 
+$csrf_token = generate_csrf_token();
+
 // Traitement : Sauvegarde de note
 $notif = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_note'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_note']) && validate_csrf_token($_POST['csrf_token'] ?? '')) {
     $etudiant_id = (int)$_POST['etudiant_id'];
     $module_id   = (int)$_POST['module_id'];
     $note_tp     = isset($_POST['note_tp']) && $_POST['note_tp'] !== '' ? (float)str_replace(',', '.', $_POST['note_tp']) : null;
@@ -52,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_note'])) {
 }
 
 // Email all students in a module
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email_all_students'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email_all_students']) && validate_csrf_token($_POST['csrf_token'] ?? '')) {
     $module_id = (int)$_POST['module_id'];
     
     try {
@@ -136,9 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email_all_students'])
             </html>
             ";
             
-            $headers = "MIME-Version: 1.0\r\n";
-            $headers .= "Content-type: text/html; charset=UTF-8\r\n";
-            $headers .= "From: noreply@usthb-scolarite.dz\r\n";
+            $headers = build_safe_email_headers('noreply@usthb-scolarite.dz');
             
             if (mail($to, $subject, $message, $headers)) {
                 $sent_count++;
@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email_all_students'])
 }
 
 // Send to Admin (notify admin that grades are ready)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_to_admin'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_to_admin']) && validate_csrf_token($_POST['csrf_token'] ?? '')) {
     $module_id = (int)$_POST['module_id'];
     
     try {
@@ -190,11 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_to_admin'])) {
             </html>
             ";
             
-            $headers = "MIME-Version: 1.0\r\n";
-            $headers .= "Content-type: text/html; charset=UTF-8\r\n";
-            $headers .= "From: noreply@usthb-scolarite.dz\r\n";
-            
-            $sent = 0;
+            $headers = build_safe_email_headers('noreply@usthb-scolarite.dz');
             foreach ($admins as $admin) {
                 if (mail($admin['email'], $subject, $message, $headers)) {
                     $sent++;
@@ -209,7 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_to_admin'])) {
 }
 
 // Handle absence recording
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_absence'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_absence']) && validate_csrf_token($_POST['csrf_token'] ?? '')) {
     $etudiant_id = (int)$_POST['etudiant_id'];
     $module_id = (int)$_POST['module_id'];
     $absence_count = isset($_POST['absence_count']) ? max((int)$_POST['absence_count'], 0) : 0;
@@ -237,46 +233,7 @@ $panel = $_GET['panel'] ?? 'grades';
     <meta charset="UTF-8">
     <title>Teacher Dashboard - <?= htmlspecialchars($ens['prenom']) ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #e8f0f5; color: #0f172a; }
-        .layout { display: flex; min-height: 100vh; }
-        .sidebar { width: 240px; background: #dbeaf5; border-right: 1px solid #b3cfe8; padding: 24px 20px; display: flex; flex-direction: column; position: fixed; height: 100vh; }
-        .logo { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 18px; color: #1e4f8c; margin-bottom: 32px; }
-        .logo-img { width: 42px; height: 42px; object-fit: contain; }
-        nav { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-        .nav-item { padding: 12px 16px; border-radius: 10px; color: #374151; text-decoration: none; font-size: 14px; transition: 0.2s; }
-        .nav-item:hover { background: #c3d9ef; color: #1e4f8c; }
-        .nav-item.active { background: #a8c8e8; color: #1e4f8c; font-weight: 600; }
-        .nav-logout { margin-top: auto; padding: 12px 16px; border-radius: 10px; color: #dc2626; text-decoration: none; font-size: 14px; font-weight: 600; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
-        .nav-logout:hover { background: #fee2e2; }
-        main { margin-left: 240px; padding: 28px 32px; width: calc(100% - 240px); }
-        header { display: flex; align-items: center; margin-bottom: 26px; }
-        .spacer { flex: 1; }
-        .user { display: flex; align-items: center; gap: 14px; background: #ffffff; border: 1px solid #b3cfe8; border-radius: 18px; padding: 8px 14px; }
-        .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #93c5fd); }
-        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; padding: 24px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04); margin-bottom: 22px; }
-        .stat-row { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-        .stat-box { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 20px; }
-        .stat-label { font-size: 12px; color: #64748b; font-weight: 600; margin-bottom: 8px; }
-        .stat-val { font-size: 28px; font-weight: 700; color: #1e4f8c; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #f8fafc; padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 700; color: #64748b; border-bottom: 1px solid #e2e8f0; }
-        td { padding: 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-        tr:hover { background: #f8fafc; }
-        input[type="number"] { padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; width: 70px; }
-        .btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .btn-blue { background: #3b82f6; color: white; }
-        .btn-blue:hover { background: #2563eb; }
-        h1 { font-size: 26px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
-        .subtitle { font-size: 13px; color: #64748b; margin-bottom: 24px; }
-        .module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .module-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 20px; }
-        .module-code { font-size: 12px; font-weight: 700; color: #1e4f8c; }
-        .module-name { font-size: 16px; font-weight: 600; margin: 8px 0; }
-        .module-info { font-size: 12px; color: #64748b; margin-top: 12px; }
-        @media (max-width: 768px) { .sidebar { display: none; } main { margin-left: 0; width: 100%; } }
-    </style>
+    <link rel="stylesheet" href="../assets/css/teacher-dashboard.css">
 </head>
 <body>
     <div class="layout">

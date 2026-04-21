@@ -10,21 +10,30 @@ $stmt = $pdo->prepare('SELECT * FROM admins WHERE id = ?');
 $stmt->execute([$user_id]);
 $admin = $stmt->fetch();
 
+$csrf_token = generate_csrf_token();
 $notif = '';
 $panel = $_GET['panel'] ?? 'dashboard';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_student'])) {
+
+// Validate CSRF on all POST requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
+        $notif = '<div style="background:#fee2e2;color:#dc2626;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;">Sécurité : jeton CSRF invalide. Veuillez réessayer.</div>';
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_student']) && validate_csrf_token($_POST['csrf_token'] ?? '')) {
     $student_id = (int)$_POST['student_id'];
     $stmt = $pdo->prepare("DELETE FROM etudiants WHERE id = ?");
     $stmt->execute([$student_id]);
     $notif = '<div style="background:#d1fae5;color:#166534;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;">Student deleted successfully.</div>';
 }
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_teacher'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_teacher']) && validate_csrf_token($_POST['csrf_token'] ?? '')) {
     $teacher_id = (int)$_POST['teacher_id'];
     $stmt = $pdo->prepare("DELETE FROM enseignants WHERE id = ?");
     $stmt->execute([$teacher_id]);
     $notif = '<div style="background:#d1fae5;color:#166534;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;">Teacher deleted successfully.</div>';
 }
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_student'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_student']) && validate_csrf_token($_POST['csrf_token'] ?? '')) {
     $nom = trim($_POST['nom'] ?? '');
     $prenom = trim($_POST['prenom'] ?? '');
     $email = trim($_POST['email'] ?? '');
@@ -51,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_student'])) {
         }
     }
 }
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_student'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_student']) && validate_csrf_token($_POST['csrf_token'] ?? '')) {
     $student_id = (int)$_POST['student_id'];
     $nom = trim($_POST['nom'] ?? '');
     $prenom = trim($_POST['prenom'] ?? '');
@@ -71,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_student'])) {
         }
     }
 }
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_teacher'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_teacher']) && validate_csrf_token($_POST['csrf_token'] ?? '')) {
     $nom = trim($_POST['nom'] ?? '');
     $prenom = trim($_POST['prenom'] ?? '');
     $email = trim($_POST['email'] ?? '');
@@ -92,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_teacher'])) {
         }
     }
 }
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_teacher'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_teacher']) && validate_csrf_token($_POST['csrf_token'] ?? '')) {
     $teacher_id = (int)$_POST['teacher_id'];
     $nom = trim($_POST['nom'] ?? '');
     $prenom = trim($_POST['prenom'] ?? '');
@@ -112,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_teacher'])) {
         }
     }
 }
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_module'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_module']) && validate_csrf_token($_POST['csrf_token'] ?? '')) {
     $code = trim($_POST['code'] ?? '');
     $intitule = trim($_POST['intitule'] ?? '');
     $coefficient = (int)($_POST['coefficient'] ?? 1);
@@ -141,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_module'])) {
         }
     }
 }
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_module'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_module']) && validate_csrf_token($_POST['csrf_token'] ?? '')) {
     $module_id = (int)$_POST['module_id'];
     $stmt = $pdo->prepare("DELETE FROM modules WHERE id = ?");
     $stmt->execute([$module_id]);
@@ -157,44 +166,7 @@ $modules = $pdo->query("SELECT * FROM modules WHERE annee_univ = '2025/2026' ORD
     <meta charset="UTF-8">
     <title>Admin Dashboard - USTHB</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #e8f0f5; color: #0f172a; }
-        .layout { display: flex; min-height: 100vh; }
-        .sidebar { width: 240px; background: #dbeaf5; border-right: 1px solid #b3cfe8; padding: 24px 20px; display: flex; flex-direction: column; position: fixed; height: 100vh; }
-        .logo { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 18px; color: #1e4f8c; margin-bottom: 32px; }
-        .logo-img { width: 42px; height: 42px; object-fit: contain; }
-        nav { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-        .nav-item { padding: 12px 16px; border-radius: 10px; color: #374151; text-decoration: none; font-size: 14px; transition: 0.2s; }
-        .nav-item:hover { background: #c3d9ef; color: #1e4f8c; }
-        .nav-item.active { background: #a8c8e8; color: #1e4f8c; font-weight: 600; }
-        .nav-logout { margin-top: auto; padding: 12px 16px; border-radius: 10px; color: #dc2626; text-decoration: none; font-size: 14px; font-weight: 600; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
-        .nav-logout:hover { background: #fee2e2; }
-        main { margin-left: 240px; padding: 28px 32px; width: calc(100% - 240px); }
-        header { display: flex; align-items: center; margin-bottom: 26px; }
-        .spacer { flex: 1; }
-        .user { display: flex; align-items: center; gap: 14px; background: #ffffff; border: 1px solid #b3cfe8; border-radius: 18px; padding: 8px 14px; }
-        .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #93c5fd); }
-        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; padding: 24px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04); margin-bottom: 22px; }
-        .stat-row { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-        .stat-box { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 20px; }
-        .stat-label { font-size: 12px; color: #64748b; font-weight: 600; margin-bottom: 8px; }
-        .stat-val { font-size: 28px; font-weight: 700; color: #1e4f8c; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #f8fafc; padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 700; color: #64748b; border-bottom: 1px solid #e2e8f0; }
-        td { padding: 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-        tr:hover { background: #f8fafc; }
-        input[type="text"], input[type="email"], input[type="password"], input[type="number"], select { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; }
-        .btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .btn-blue { background: #3b82f6; color: white; }
-        .btn-blue:hover { background: #2563eb; }
-        .btn-red { background: #dc2626; color: white; }
-        .btn-red:hover { background: #b91c1c; }
-        h1 { font-size: 26px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
-        .subtitle { font-size: 13px; color: #64748b; margin-bottom: 24px; }
-        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px; }
-        @media (max-width: 768px) { .sidebar { display: none; } main { margin-left: 0; width: 100%; } }
-    </style>
+    <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
 </head>
 <body>
     <div class="layout">
@@ -247,6 +219,7 @@ $modules = $pdo->query("SELECT * FROM modules WHERE annee_univ = '2025/2026' ORD
                 <div class="card">
                     <div style="margin-bottom: 16px; font-size: 16px; font-weight: 600; color: #0f172a;">Add New Student</div>
                     <form method="POST">
+                        <input type="hidden" name="csrf_token" value="<?= h($csrf_token) ?>">
                         <div class="form-row">
                             <input type="text" name="nom" placeholder="Last Name" required>
                             <input type="text" name="prenom" placeholder="First Name" required>
@@ -293,6 +266,7 @@ $modules = $pdo->query("SELECT * FROM modules WHERE annee_univ = '2025/2026' ORD
                                     </td>
                                     <td>
                                         <form method="POST" style="display: inline;">
+                                            <input type="hidden" name="csrf_token" value="<?= h($csrf_token) ?>">
                                             <input type="hidden" name="student_id" value="<?= $s['id'] ?>">
                                             <button type="submit" name="delete_student" class="btn btn-red" onclick="return confirm('Delete this student?')">Delete</button>
                                         </form>
@@ -312,6 +286,7 @@ $modules = $pdo->query("SELECT * FROM modules WHERE annee_univ = '2025/2026' ORD
                 <div class="card">
                     <div style="margin-bottom: 16px; font-size: 16px; font-weight: 600; color: #0f172a;">Add New Teacher</div>
                     <form method="POST">
+                        <input type="hidden" name="csrf_token" value="<?= h($csrf_token) ?>">
                         <div class="form-row">
                             <input type="text" name="nom" placeholder="Last Name" required>
                             <input type="text" name="prenom" placeholder="First Name" required>
@@ -365,6 +340,7 @@ $modules = $pdo->query("SELECT * FROM modules WHERE annee_univ = '2025/2026' ORD
                                     </td>
                                     <td>
                                         <form method="POST" style="display: inline;">
+                                            <input type="hidden" name="csrf_token" value="<?= h($csrf_token) ?>">
                                             <input type="hidden" name="teacher_id" value="<?= $t['id'] ?>">
                                             <button type="submit" name="delete_teacher" class="btn btn-red" onclick="return confirm('Delete this teacher?')">Delete</button>
                                         </form>
@@ -384,6 +360,7 @@ $modules = $pdo->query("SELECT * FROM modules WHERE annee_univ = '2025/2026' ORD
                 <div class="card">
                     <div style="margin-bottom: 16px; font-size: 16px; font-weight: 600; color: #0f172a;">Add New Module</div>
                     <form method="POST">
+                        <input type="hidden" name="csrf_token" value="<?= h($csrf_token) ?>">
                         <div class="form-row">
                             <input type="text" name="code" placeholder="Module Code (e.g., PWEB)" required>
                             <input type="text" name="intitule" placeholder="Module Name" required>

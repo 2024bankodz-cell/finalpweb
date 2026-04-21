@@ -125,6 +125,43 @@ CREATE TABLE IF NOT EXISTS tasks (
 );
 
 -- ============================================================
+--  Indexes pour optimisation des requêtes
+-- ============================================================
+CREATE INDEX idx_etudiants_email ON etudiants(email);
+CREATE INDEX idx_etudiants_matricule ON etudiants(matricule);
+CREATE INDEX idx_etudiants_niveau ON etudiants(niveau);
+CREATE INDEX idx_etudiants_actif ON etudiants(actif);
+
+CREATE INDEX idx_enseignants_email ON enseignants(email);
+CREATE INDEX idx_enseignants_departement ON enseignants(departement);
+CREATE INDEX idx_enseignants_actif ON enseignants(actif);
+
+CREATE INDEX idx_admins_email ON admins(email);
+CREATE INDEX idx_admins_actif ON admins(actif);
+
+CREATE INDEX idx_modules_code ON modules(code);
+CREATE INDEX idx_modules_niveau ON modules(niveau);
+CREATE INDEX idx_modules_enseignant_annee ON modules(enseignant_id, annee_univ);
+
+CREATE INDEX idx_inscriptions_etudiant ON inscriptions(etudiant_id);
+CREATE INDEX idx_inscriptions_module ON inscriptions(module_id);
+CREATE INDEX idx_inscriptions_annee ON inscriptions(annee_univ);
+
+CREATE INDEX idx_notes_etudiant ON notes(etudiant_id);
+CREATE INDEX idx_notes_module ON notes(module_id);
+CREATE INDEX idx_notes_annee ON notes(annee_univ);
+
+CREATE INDEX idx_absences_etudiant ON absences(etudiant_id);
+CREATE INDEX idx_absences_module ON absences(module_id);
+CREATE INDEX idx_absences_annee ON absences(annee_univ);
+
+CREATE INDEX idx_planning_etudiant ON planning(etudiant_id);
+CREATE INDEX idx_planning_jour ON planning(jour);
+
+CREATE INDEX idx_tasks_etudiant ON tasks(etudiant_id);
+CREATE INDEX idx_tasks_statut ON tasks(statut);
+
+-- ============================================================
 --  Données de démonstration
 -- ============================================================
 

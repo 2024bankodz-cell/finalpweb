@@ -344,7 +344,7 @@ $max_absences = 3;
             <a href="#" class="nav-item">Assignments</a>
             <a href="grades.php" class="nav-item">Grades</a>
             <a href="absences.php" class="nav-item active">Absences</a>
-            <a href="logout.php" class="nav-item" style="color:#b91c1c; margin-top: auto;">Logout</a>
+            <a href="../public/logout.php" class="nav-item" style="color:#b91c1c; margin-top: auto;">Logout</a>
         </nav>
         <div class="help-box">
             <h4>HELP CENTER</h4>

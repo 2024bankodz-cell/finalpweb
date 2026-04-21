@@ -1,10 +1,27 @@
 <?php
 require_once '../includes/auth.php';
-if (is_logged_in()) { header('Location: ' . url(get_dashboard_url())); exit; }
-$error = ''; $pre_role = in_array($_GET['role'] ?? 'etudiant', ['etudiant', 'enseignant', 'admin']) ? $_GET['role'] : 'etudiant';
+
+if (is_logged_in()) { 
+    header('Location: ' . url(get_dashboard_url())); 
+    exit; 
+}
+
+$csrf_token = generate_csrf_token();
+$error = '';
+$pre_role = isset($_GET['role']) && in_array($_GET['role'], ['etudiant', 'enseignant', 'admin']) ? $_GET['role'] : 'etudiant';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $result = login(trim($_POST['identifiant'] ?? ''), $_POST['password'] ?? '', $_POST['role'] ?? '');
-    if (!$result['success']) { $error = $result['message']; } else { header('Location: ' . url(get_dashboard_url())); exit; }
+    if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
+        $error = 'Security error: Invalid CSRF token. Please try again.';
+    } else {
+        $result = login(trim($_POST['identifiant'] ?? ''), $_POST['password'] ?? '', $_POST['role'] ?? '');
+        if (!$result['success']) { 
+            $error = $result['message']; 
+        } else { 
+            header('Location: ' . url(get_dashboard_url())); 
+            exit; 
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -42,25 +59,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($error): echo alert('error', $error); endif; ?>
 
         <form method="POST" action="login.php">
+            <input type="hidden" name="csrf_token" value="<?= h($csrf_token) ?>">
+            <input type="hidden" name="role" id="role-input" value="<?= h($pre_role) ?>">
+            
             <div class="rs-label">Login as</div>
             <div class="role-selector">
-                <?php
-                $roles = ['etudiant' => 'Student', 'enseignant' => 'Teacher', 'admin' => 'Admin'];
-                foreach ($roles as $key => $label):
-                    $sel = ($key === $pre_role) ? 'sel' : '';
-                ?>
-                <div class="rs-btn <?= $sel ?>" id="lr-<?= $key ?>" onclick="selRole('<?= $key ?>')">
-                    <?= $label ?>
-                </div>
-                <?php endforeach; ?>
+                <div class="rs-btn <?= $pre_role === 'etudiant' ? 'sel' : '' ?>" id="lr-etudiant" onclick="selRole('etudiant')">Student</div>
+                <div class="rs-btn <?= $pre_role === 'enseignant' ? 'sel' : '' ?>" id="lr-enseignant" onclick="selRole('enseignant')">Teacher</div>
+                <div class="rs-btn <?= $pre_role === 'admin' ? 'sel' : '' ?>" id="lr-admin" onclick="selRole('admin')">Admin</div>
             </div>
-            <input type="hidden" name="role" id="role-input" value="<?= h($pre_role) ?>">
 
             <div class="form-group">
                 <label id="identifiant-label">Email or Registration Number</label>
-                <input type="text" name="identifiant" id="identifiant-input"
-                       placeholder="e.g. 12345 or email@usthb.dz"
-                       value="<?= h($_POST['identifiant'] ?? '') ?>" required>
+                <input type="text" name="identifiant" id="identifiant-input" placeholder="e.g. 12345 or email@usthb.dz" value="<?= h($_POST['identifiant'] ?? '') ?>" required>
             </div>
             <div class="form-group">
                 <label>Password</label>
@@ -75,15 +86,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Accounts are created only by the scolarité administrator.<br>
             Contact administration if you don't yet have your credentials.
         </div>
-
-        <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--color-border-light);">
-            <div style="font-size:10px;font-weight:700;color:var(--color-text-tertiary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">Demo Accounts</div>
-            <div style="font-size:11px;color:var(--color-text-secondary);line-height:2;">
-                <strong>Student:</strong> 12345 / password123<br>
-                <strong>Teacher:</strong> laachemi@usthb.dz / password123<br>
-                <strong>Admin:</strong> admin@usthb.dz / password123
-            </div>
-        </div>
     </div>
 </div>
 
@@ -92,17 +94,11 @@ function selRole(r) {
     document.querySelectorAll('.rs-btn').forEach(b => b.classList.remove('sel'));
     document.getElementById('lr-' + r).classList.add('sel');
     document.getElementById('role-input').value = r;
-    var label = document.getElementById('identifiant-label');
-    var input = document.getElementById('identifiant-input');
-    if (r === 'etudiant') {
-        label.textContent = 'Email or Registration Number';
-        input.placeholder = 'e.g. 12345 or email@usthb.dz';
-    } else {
-        label.textContent = 'Email';
-        input.placeholder = 'email@usthb.dz';
-    }
+    document.getElementById('identifiant-label').textContent = r === 'etudiant' ? 'Email or Registration Number' : 'Email';
+    document.getElementById('identifiant-input').placeholder = r === 'etudiant' ? 'e.g. 12345 or email@usthb.dz' : 'email@usthb.dz';
 }
 selRole('<?= h($pre_role) ?>');
 </script>
+
 </body>
 </html>

@@ -67,47 +67,7 @@ function calculateFinal($tp, $td, $exam) {
     <meta charset="UTF-8">
     <title>USTHB Dashboard - <?= htmlspecialchars($u['prenom']) ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #e8f0f5; color: #0f172a; }
-        .layout { display: flex; min-height: 100vh; }
-        .sidebar { width: 240px; background: #dbeaf5; border-right: 1px solid #b3cfe8; padding: 24px 20px; display: flex; flex-direction: column; position: fixed; height: 100vh; }
-        .logo { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 18px; color: #1e4f8c; margin-bottom: 32px; }
-        .logo-img { width: 42px; height: 42px; object-fit: contain; }
-        nav { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-        .nav-item { padding: 12px 16px; border-radius: 10px; color: #374151; text-decoration: none; font-size: 14px; transition: 0.2s; }
-        .nav-item:hover { background: #c3d9ef; color: #1e4f8c; }
-        .nav-item.active { background: #a8c8e8; color: #1e4f8c; font-weight: 600; }
-        .nav-logout { margin-top: auto; padding: 12px 16px; border-radius: 10px; color: #dc2626; text-decoration: none; font-size: 14px; font-weight: 600; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
-        .nav-logout:hover { background: #fee2e2; }
-        main { margin-left: 240px; padding: 28px 32px; width: calc(100% - 240px); }
-        header { display: flex; align-items: center; margin-bottom: 26px; }
-        .spacer { flex: 1; }
-        .user { display: flex; align-items: center; gap: 14px; background: #ffffff; border: 1px solid #b3cfe8; border-radius: 18px; padding: 8px 14px; }
-        .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #93c5fd); }
-        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; padding: 24px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04); margin-bottom: 22px; }
-        .card-label { display: inline-flex; padding: 6px 12px; border-radius: 999px; background: #d0e8f7; color: #1e4f8c; font-size: 11px; font-weight: 700; margin-bottom: 16px; }
-        .grading-flex { display: flex; justify-content: space-between; align-items: center; }
-        .policy-main { display: flex; gap: 40px; }
-        .policy-item .big { font-size: 42px; color: #1e4f8c; font-weight: 700; line-height: 1.1; }
-        .policy-item .small { font-size: 12px; color: #64748b; font-weight: 500; text-transform: uppercase; }
-        .tp-box { background: #eff6ff; border-radius: 18px; padding: 16px 20px; border: 1px solid #dbeafe; }
-        .tp-box h4 { font-size: 11px; color: #1e4f8c; margin-bottom: 10px; font-weight: 700; }
-        .tp-grid { display: flex; gap: 20px; text-align: center; }
-        .tp-col span { display: block; font-size: 16px; font-weight: 700; color: #1e4f8c; }
-        .tp-col small { font-size: 10px; color: #64748b; font-weight: 600; }
-        .main-row { display: grid; grid-template-columns: 1.3fr 0.85fr; gap: 24px; }
-        .schedule-item, .absence-item { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 18px; background: #f8fafc; margin-bottom: 12px; }
-        .schedule-date { width: 64px; text-align: center; padding: 10px 0; background: #dbeaf5; border-radius: 14px; color: #1e4f8c; font-weight: 700; }
-        .grade-row { margin-bottom: 18px; }
-        .grade-info { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; font-weight: 600; }
-        .grade-track { background: #d0e8f7; border-radius: 14px; height: 32px; overflow: hidden; position: relative; }
-        .grade-fill { height: 100%; background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%); }
-        .dots { display: flex; gap: 6px; margin-top: 6px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; }
-        .dot.filled { background: #3b82f6; }
-        .excluded-msg { color: #dc2626; font-size: 11px; font-weight: 700; margin-top: 4px; border-top: 1px solid #fee2e2; padding-top: 8px; }
-    </style>
+    <link rel="stylesheet" href="../assets/css/student-dashboard.css">
 </head>
 <body>
     <div class="layout">

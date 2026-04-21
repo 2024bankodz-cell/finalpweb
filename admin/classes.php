@@ -78,7 +78,7 @@ $total_count = count($all);
             <a href="classes.php" class="nav-item active">My Classes</a>
             <a href="assignments.php" class="nav-item">Assignments</a>
             <a href="grades.php" class="nav-item">Grades</a>
-            <a href="logout.php" class="nav-item" style="color:#dc2626; margin-top: auto;">Logout</a>
+            <a href="../public/logout.php" class="nav-item" style="color:#dc2626; margin-top: auto;">Logout</a>
         </nav>
     </aside>
     <main>

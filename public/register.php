@@ -2,35 +2,42 @@
 require_once '../includes/auth.php';
 if (is_logged_in()) { header('Location: ' . url(get_dashboard_url())); exit; }
 
+// Initialize CSRF token first (before POST validation)
+$csrf_token = generate_csrf_token();
+
 $error   = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = [
-        'role'             => $_POST['role']             ?? '',
-        'nom'              => trim($_POST['nom']         ?? ''),
-        'prenom'           => trim($_POST['prenom']      ?? ''),
-        'email'            => trim($_POST['email']       ?? ''),
-        'password'         => $_POST['password']         ?? '',
-        'confirm_password' => $_POST['confirm_password'] ?? '',
-        // Étudiant
-        'matricule'        => trim($_POST['matricule']   ?? ''),
-        'niveau'           => $_POST['niveau']           ?? 'L1 Info',
-        'date_naissance'   => $_POST['date_naissance']   ?? null,
-        // Enseignant
-        'grade'            => $_POST['grade']            ?? 'Dr.',
-        'departement'      => $_POST['departement']      ?? 'Informatique',
-        'specialite'       => trim($_POST['specialite']  ?? ''),
-        // Admin
-        'code_admin'       => $_POST['code_admin']       ?? '',
-        'service'          => trim($_POST['service']     ?? ''),
-    ];
-
-    $result = register($data);
-    if ($result['success']) {
-        $success = $result['message'];
+    if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
+        $error = 'Erreur de sécurité (jeton CSRF invalide). Veuillez réessayer.';
     } else {
-        $error = $result['message'];
+        $data = [
+            'role'             => $_POST['role']             ?? '',
+            'nom'              => trim($_POST['nom']         ?? ''),
+            'prenom'           => trim($_POST['prenom']      ?? ''),
+            'email'            => trim($_POST['email']       ?? ''),
+            'password'         => $_POST['password']         ?? '',
+            'confirm_password' => $_POST['confirm_password'] ?? '',
+            // Étudiant
+            'matricule'        => trim($_POST['matricule']   ?? ''),
+            'niveau'           => $_POST['niveau']           ?? 'L1 Info',
+            'date_naissance'   => $_POST['date_naissance']   ?? null,
+            // Enseignant
+            'grade'            => $_POST['grade']            ?? 'Dr.',
+            'departement'      => $_POST['departement']      ?? 'Informatique',
+            'specialite'       => trim($_POST['specialite']  ?? ''),
+            // Admin
+            'code_admin'       => $_POST['code_admin']       ?? '',
+            'service'          => trim($_POST['service']     ?? ''),
+        ];
+
+        $result = register($data);
+        if ($result['success']) {
+            $success = $result['message'];
+        } else {
+            $error = $result['message'];
+        }
     }
 }
 
@@ -82,6 +89,7 @@ $post_role = $_POST['role'] ?? 'etudiant';
         <?php else: ?>
 
         <form method="POST" action="register.php">
+            <input type="hidden" name="csrf_token" value="<?= h($csrf_token) ?>">
             <!-- Rôle -->
             <div class="rs-label">Je suis un(e)</div>
             <div class="role-selector" style="margin-bottom:20px;">

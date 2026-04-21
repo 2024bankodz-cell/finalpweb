@@ -41,9 +41,7 @@ if (is_logged_in()) {
             Access your personal space to view your grades, manage your modules and academic records.
         </div>
         <div class="hero-btns">
-            <a href="public/login.php">
-                <button class="btn-primary">Login</button>
-            </a>
+            <a href="public/login.php" class="btn-primary" style="display:inline-block; text-decoration:none; text-align:center; color:#fff;">Login</a>
         </div>
     </div>
 </section>
