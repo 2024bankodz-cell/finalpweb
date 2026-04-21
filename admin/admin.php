@@ -29,9 +29,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_student']) && 
 }
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_teacher']) && validate_csrf_token($_POST['csrf_token'] ?? '')) {
     $teacher_id = (int)$_POST['teacher_id'];
-    $stmt = $pdo->prepare("DELETE FROM enseignants WHERE id = ?");
-    $stmt->execute([$teacher_id]);
-    $notif = '<div style="background:#d1fae5;color:#166534;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;">Teacher deleted successfully.</div>';
+    try {
+        // Delete notes first
+        $stmt = $pdo->prepare("DELETE FROM notes WHERE enseignant_id = ?");
+        $stmt->execute([$teacher_id]);
+        
+        // Clear module assignments
+        $stmt = $pdo->prepare("UPDATE modules SET enseignant_id = NULL WHERE enseignant_id = ?");
+        $stmt->execute([$teacher_id]);
+        
+        // Delete teacher
+        $stmt = $pdo->prepare("DELETE FROM enseignants WHERE id = ?");
+        $stmt->execute([$teacher_id]);
+        
+        $notif = '<div style="background:#d1fae5;color:#166534;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;">Teacher deleted successfully.</div>';
+    } catch (\Exception $e) {
+        $notif = '<div style="background:#fee2e2;color:#dc2626;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;">Error deleting teacher: ' . h($e->getMessage()) . '</div>';
+    }
 }
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_student']) && validate_csrf_token($_POST['csrf_token'] ?? '')) {
     $nom = trim($_POST['nom'] ?? '');

@@ -10,9 +10,10 @@ $stmt = $pdo->prepare('SELECT * FROM enseignants WHERE id = ?');
 $stmt->execute([$user_id]);
 $ens = $stmt->fetch();
 
-$stmt = $pdo->prepare('SELECT * FROM modules WHERE enseignant_id = ? AND annee_univ = ? ORDER BY code ASC LIMIT 1');
+$stmt = $pdo->prepare('SELECT * FROM modules WHERE enseignant_id = ? AND annee_univ = ? LIMIT 1');
 $stmt->execute([$user_id, '2025/2026']);
-$modules = $stmt->fetchAll();
+$mod = $stmt->fetch();
+$modules = $mod ? [$mod] : [];
 
 $csrf_token = generate_csrf_token();
 
@@ -58,16 +59,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email_all_students'])
     $module_id = (int)$_POST['module_id'];
     
     try {
-        // Get all students in this module
-        $stmt = $pdo->prepare("
-            SELECT e.id, e.nom, e.prenom, e.email FROM inscriptions i
-            JOIN etudiants e ON i.etudiant_id = e.id
-            WHERE i.module_id = ? AND i.annee_univ = '2025/2026'
-        ");
+        // Get all students at module niveau level (same as grades view)
+        $stmt = $pdo->prepare("SELECT m.niveau FROM modules m WHERE m.id = ?");
         $stmt->execute([$module_id]);
-        $all_students = $stmt->fetchAll();
+        $module = $stmt->fetch();
         
         $sent_count = 0;
+        if ($module) {
+            $stmt = $pdo->prepare("
+                SELECT e.id, e.nom, e.prenom, e.email FROM etudiants e
+                WHERE e.niveau LIKE ? AND e.actif = 1
+                ORDER BY e.nom, e.prenom
+            ");
+            $stmt->execute([$module['niveau'] . '%']);
+            $all_students = $stmt->fetchAll();
+        
         foreach ($all_students as $student) {
             // Get student's grades
             $stmt2 = $pdo->prepare("
@@ -146,6 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email_all_students'])
         }
         
         $notif = '<div style="background:#d1fae5;color:#166534;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;">Grades emails sent to ' . $sent_count . ' student(s).</div>';
+        }
     } catch (\PDOException $e) {
         $notif = '<div style="background:#fee2e2;color:#dc2626;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:16px;">Failed to send emails.</div>';
     }
@@ -265,16 +272,14 @@ $panel = $_GET['panel'] ?? 'grades';
                         <p style="color: #64748b; font-size: 14px;">No modules assigned for this academic year.</p>
                     </div>
                 <?php else: ?>
-                    <?php foreach ($modules as $mod): 
+                    <?php if ($mod): 
                         $stmt = $pdo->prepare("
-                            SELECT e.id, e.nom, e.prenom, e.matricule, e.niveau, n.note_tp, n.note_td, n.note_exam
-                            FROM inscriptions i
-                            JOIN etudiants e ON e.id = i.etudiant_id
-                            LEFT JOIN notes n ON n.etudiant_id = e.id AND n.module_id = i.module_id AND n.annee_univ = '2025/2026'
-                            WHERE i.module_id = ? AND i.annee_univ = '2025/2026'
+                            SELECT e.id, e.nom, e.prenom, e.matricule, e.niveau, e.last_online
+                            FROM etudiants e
+                            WHERE e.niveau LIKE ? AND e.actif = 1
                             ORDER BY e.nom, e.prenom
                         ");
-                        $stmt->execute([$mod['id']]);
+                        $stmt->execute([$mod['niveau'] . '%']);
                         $students = $stmt->fetchAll();
                     ?>
                     <div class="card">
@@ -297,6 +302,7 @@ $panel = $_GET['panel'] ?? 'grades';
                                             <th>Matricule</th>
                                             <th>Student Name</th>
                                             <th>Section</th>
+                                            <th>Status</th>
                                             <th>TP</th>
                                             <th>TD</th>
                                             <th>Exam</th>
@@ -318,6 +324,13 @@ $panel = $_GET['panel'] ?? 'grades';
                                             <td><?= h($std['matricule']) ?></td>
                                             <td><?= h($std['nom'] . ', ' . $std['prenom']) ?></td>
                                             <td><span style="background:#d0e8f7;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;"><?= h($std['niveau']) ?></span></td>
+                                            <td>
+                                                <?php
+                                                    $last_online = $std['last_online'] ? strtotime($std['last_online']) : null;
+                                                    $is_online = $last_online && (time() - $last_online) < 300;
+                                                    echo $is_online ? '<span style="color: green; font-size: 18px;">●</span>' : '<span style="color: red; font-size: 18px;">●</span>';
+                                                ?>
+                                            </td>
                                             <td style="font-weight: 600; color: <?= $tp !== null ? ($tp >= 10 ? '#10b981' : '#dc2626') : '#64748b' ?>"><?= $tp !== null ? number_format($tp, 2) : '—' ?></td>
                                             <td style="font-weight: 600; color: <?= $td !== null ? ($td >= 10 ? '#10b981' : '#dc2626') : '#64748b' ?>"><?= $td !== null ? number_format($td, 2) : '—' ?></td>
                                             <td style="font-weight: 600; color: <?= $exam !== null ? ($exam >= 10 ? '#10b981' : '#dc2626') : '#64748b' ?>">
@@ -361,7 +374,7 @@ $panel = $_GET['panel'] ?? 'grades';
                         </div>
                         <?php endif; ?>
                     </div>
-                    <?php endforeach; ?>
+                    <?php endif; ?>
                 <?php endif; ?>
 
             <?php elseif ($panel === 'modules'): ?>
@@ -385,12 +398,12 @@ $panel = $_GET['panel'] ?? 'grades';
                     </div>
 
                     <div class="module-grid">
-                        <?php foreach ($modules as $mod):
-                            $stmt = $pdo->prepare("SELECT COUNT(*) FROM inscriptions WHERE module_id = ? AND annee_univ = '2025/2026'");
-                            $stmt->execute([$mod['id']]);
-                            $enrolled = $stmt->fetchColumn();
+                        <?php if ($mod):
+                            $stmt = $pdo->prepare("SELECT COUNT(*) FROM etudiants WHERE niveau LIKE ? AND actif = 1");
+                            $stmt->execute([$mod['niveau'] . '%']);
+                            $total_students = $stmt->fetchColumn();
 
-                            $stmt = $pdo->prepare("SELECT AVG(COALESCE(note_exam, note_td, note_tp)) FROM notes WHERE module_id = ? AND annee_univ = '2025/2026'");
+                            $stmt = $pdo->prepare("SELECT AVG(COALESCE(ROUND((note_tp * 0.2) + (note_td * 0.3) + (note_exam * 0.5), 2))) FROM notes WHERE module_id = ? AND annee_univ = '2025/2026'");
                             $stmt->execute([$mod['id']]);
                             $avg_grade = $stmt->fetchColumn();
                         ?>
@@ -401,12 +414,12 @@ $panel = $_GET['panel'] ?? 'grades';
                                 <div style="margin-top: 12px;">
                                     <strong>Credits:</strong> <?= $mod['coefficient'] ?><br>
                                     <strong>Level:</strong> <?= h($mod['niveau']) ?><br>
-                                    <strong>Enrolled:</strong> <?= $enrolled ?> students<br>
+                                    <strong>Total Students:</strong> <?= $total_students ?> students<br>
                                     <strong>Avg Grade:</strong> <?= $avg_grade ? number_format($avg_grade, 2) : '—' ?>
                                 </div>
                             </div>
                         </div>
-                        <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
 
@@ -420,15 +433,14 @@ $panel = $_GET['panel'] ?? 'grades';
                         <p style="color: #64748b; font-size: 14px;">No modules assigned for this academic year.</p>
                     </div>
                 <?php else: ?>
-                    <?php foreach ($modules as $mod): 
+                    <?php if ($mod): 
                         $stmt = $pdo->prepare("
                             SELECT e.id, e.nom, e.prenom, e.matricule
-                            FROM inscriptions i
-                            JOIN etudiants e ON e.id = i.etudiant_id
-                            WHERE i.module_id = ? AND i.annee_univ = '2025/2026'
+                            FROM etudiants e
+                            WHERE e.niveau LIKE ? AND e.actif = 1
                             ORDER BY e.nom, e.prenom
                         ");
-                        $stmt->execute([$mod['id']]);
+                        $stmt->execute([$mod['niveau'] . '%']);
                         $students = $stmt->fetchAll();
                     ?>
                     <div class="card">
@@ -441,7 +453,7 @@ $panel = $_GET['panel'] ?? 'grades';
                         </div>
 
                         <?php if (empty($students)): ?>
-                            <p style="color: #64748b; font-size: 12px;">No students enrolled in this module.</p>
+                            <p style="color: #64748b; font-size: 12px;">No students at this level.</p>
                         <?php else: ?>
                             <input type="text" class="student-search" placeholder="Search students by name..." style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; margin-bottom: 16px;">
                             <div style="overflow-x: auto;">
@@ -484,7 +496,7 @@ $panel = $_GET['panel'] ?? 'grades';
                             </div>
                         <?php endif; ?>
                     </div>
-                    <?php endforeach; ?>
+                    <?php endif; ?>
                 <?php endif; ?>
 
             <?php else: // profile panel ?>

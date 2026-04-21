@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/auth.php';
-require_login('etudiant');
+require_login('admin');
 $pdo = get_pdo();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

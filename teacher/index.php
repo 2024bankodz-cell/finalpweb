@@ -9,9 +9,10 @@ $stmt = $pdo->prepare("SELECT * FROM enseignants WHERE id = ?");
 $stmt->execute([$user_id]);
 $ens = $stmt->fetch();
 
-$stmt = $pdo->prepare("SELECT * FROM modules WHERE enseignant_id = ? AND annee_univ = '2025/2026' ORDER BY code ASC LIMIT 1");
+$stmt = $pdo->prepare("SELECT * FROM modules WHERE enseignant_id = ? AND annee_univ = '2025/2026' LIMIT 1");
 $stmt->execute([$user_id]);
-$modules = $stmt->fetchAll();
+$mod = $stmt->fetch();
+$modules = $mod ? [$mod] : [];
 
 $noteField = get_note_column($pdo);
 seed_demo_students_for_teacher($pdo, $modules, $noteField);
@@ -68,9 +69,9 @@ function seed_demo_students_for_teacher(PDO $pdo, array $modules, string $noteFi
         $stmt = $pdo->prepare("
             INSERT IGNORE INTO inscriptions (etudiant_id, module_id, annee_univ)
             SELECT e.id, ?, '2025/2026' FROM etudiants e
-            WHERE e.niveau = ? AND e.actif = 1
+            WHERE e.niveau LIKE ? AND e.actif = 1
         ");
-        $stmt->execute([$mod['id'], $mod['niveau']]);
+        $stmt->execute([$mod['id'], $mod['niveau'] . '%']);
     }
 }
 ?>

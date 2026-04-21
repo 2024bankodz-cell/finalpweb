@@ -226,6 +226,33 @@ function require_login(string $expected_role = ''): void {
         header('Location: ' . url(get_dashboard_url()));
         exit;
     }
+    
+    // Update last_online on every page load
+    update_session_last_online();
+}
+
+function update_session_last_online(): void {
+    $pdo = get_pdo();
+    $user_id = $_SESSION['user_id'] ?? null;
+    $user_role = $_SESSION['user_role'] ?? null;
+
+    if ($user_id && $user_role) {
+        $tables = [
+            'etudiant' => 'etudiants',
+            'enseignant' => 'enseignants',
+            'admin' => 'admins',
+        ];
+
+        if (isset($tables[$user_role])) {
+            $table = $tables[$user_role];
+            try {
+                $stmt = $pdo->prepare("UPDATE $table SET last_online = NOW() WHERE id = ?");
+                $stmt->execute([$user_id]);
+            } catch (\Exception $e) {
+                // Fail silently if update fails
+            }
+        }
+    }
 }
 
 function logout(): void {

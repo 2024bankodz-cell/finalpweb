@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/auth.php';
-require_login('etudiant');
+require_login('admin');
 $pdo = get_pdo();
 $user_id = $_SESSION['user_id'];
 
